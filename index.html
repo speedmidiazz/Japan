@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clan Japão - Minecraft Server</title>
+    <style>
+      :root {
+        --bg-deep: #0a0a12;
+        --bg-dark: #0f0f1a;
+        --surface: #161625;
+        --surface-light: #1c1c30;
+        --glass: rgba(255, 255, 255, 0.05);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --text-main: #e0e0e0;
+        --text-dim: #a0a0b0;
+        --accent-neon: #00f3ff;
+        --accent-crimson: #ff003c;
+        --font-display: 'Noto Sans JP', sans-serif;
+        --font-main: 'Inter', sans-serif;
+        --font-mono: 'JetBrains Mono', monospace;
+      }
+
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        background-color: var(--bg-deep);
+        color: var(--text-main);
+        font-family: var(--font-main);
+        overflow-x: hidden;
+        line-height: 1.6;
+      }
+
+      /* Background & Effects */
+      #bg-image-container {
+        position: fixed;
+        top: -5%; left: -5%;
+        width: 110%; height: 110%;
+        background: url('background.jpg') center/cover no-repeat;
+        z-index: -2;
+        transition: transform 0.1s ease-out;
+      }
+      #bg-overlay {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: radial-gradient(circle at center, transparent 0%, var(--bg-deep) 80%);
+        z-index: -1;
+      }
+
+      header {
+        position: fixed;
+        top: 0; width: 100%;
+        padding: 1.5rem 5%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 1000;
+        background: rgba(10, 10, 18, 0.8);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--glass-border);
+      }
+      .logo {
+        font-family: var(--font-display);
+        font-size: 1.8rem;
+        font-weight: 900;
+        text-decoration: none;
+        color: white;
+        letter-spacing: -1px;
+      }
+      .logo span { color: var(--accent-neon); }
+      nav ul { display: flex; list-style: none; gap: 2rem; }
+      nav ul li a {
+        text-decoration: none;
+        color: var(--text-dim);
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: 0.3s;
+        cursor: pointer;
+      }
+      nav ul li a:hover { color: var(--accent-neon); }
+
+      .hero {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 0 20px;
+      }
+      .glitch-text {
+        font-family: var(--font-display);
+        font-size: 6rem;
+        font-weight: 900;
+        color: white;
+        text-transform: uppercase;
+        position: relative;
+        margin-bottom: 1rem;
+      }
+      .hero p {
+        max-width: 600px;
+        font-size: 1.2rem;
+        color: var(--text-dim);
+        margin-bottom: 2.5rem;
+      }
+      .cta-button {
+        padding: 1rem 2.5rem;
+        background: var(--accent-neon);
+        color: var(--bg-deep);
+        text-decoration: none;
+        font-weight: bold;
+        border-radius: 50px;
+        text-transform: uppercase;
+        transition: 0.3s;
+        box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+      }
+      .cta-button:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(0, 243, 255, 0.6); }
+
+      .server-section { padding: 100px 10%; text-align: center; }
+      .section-title {
+        font-family: var(--font-display);
+        font-size: 3rem;
+        margin-bottom: 4rem;
+        position: relative;
+        display: inline-block;
+      }
+      .section-title::after {
+        content: "";
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 4px;
+        background: var(--accent-neon);
+      }
+
+      .ip-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-bottom: 4rem; }
+      .ip-card {
+        background: var(--surface);
+        padding: 3rem 2rem;
+        border-left: 4px solid var(--accent-neon);
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+      .ip-card:hover { transform: scale(1.02); background: #1d1d35; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+      .ip-card h3 { font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--accent-neon); }
+      .ip-address {
+        font-family: var(--font-mono);
+        background: rgba(0, 0, 0, 0.3);
+        padding: 1rem;
+        display: block;
+        border-radius: 4px;
+        font-size: 1.1rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        word-break: break-all;
+      }
+      .copy-hint { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.5rem; display: block; }
+
+      .rules-container {
+        background: var(--surface);
+        padding: 3rem;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 0, 60, 0.3);
+        text-align: left;
+        margin-bottom: 4rem;
+      }
+      .rules-list { list-style: none; counter-reset: rule-counter; }
+      .rules-list li {
+        counter-increment: rule-counter;
+        margin-bottom: 1rem;
+        padding-left: 3rem;
+        position: relative;
+        font-size: 1.1rem;
+      }
+      .rules-list li::before {
+        content: counter(rule-counter);
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 2rem;
+        height: 2rem;
+        background: var(--accent-crimson);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-family: var(--font-display);
+      }
+
+      .staff-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin-top: 3rem; }
+      .staff-card {
+        background: var(--surface);
+        padding: 2rem 1rem;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .staff-card:hover { border-color: var(--accent-neon); transform: translateY(-10px); box-shadow: 0 10px 30px rgba(0, 243, 255, 0.1); }
+      .staff-avatar {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(45deg, var(--accent-crimson), var(--accent-neon));
+        border-radius: 50%;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.5rem;
+        color: white;
+        border: 3px solid var(--bg-deep);
+        overflow: hidden;
+      }
+      .staff-avatar img { width: 100%; height: 100%; object-fit: cover; }
+      .staff-name { font-family: var(--font-display); font-size: 1.2rem; margin-bottom: 0.2rem; }
+      .staff-role { color: var(--accent-neon); font-size: 0.8rem; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
+
+      .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; text-align: left; }
+      .feature-card {
+        background: var(--surface-light);
+        padding: 1.5rem;
+        border-radius: 8px;
+        border: 1px solid rgba(0, 243, 255, 0.2);
+      }
+      .feature-card h4 { color: var(--accent-neon); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+      .cmd-tag {
+        font-family: var(--font-mono);
+        background: #000;
+        color: #fff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        border: 1px solid var(--accent-neon);
+      }
+
+      .boss-info {
+        background: linear-gradient(135deg, #161625 0%, #2a000c 100%);
+        padding: 3rem;
+        border-radius: 15px;
+        border: 2px solid var(--accent-crimson);
+        margin-top: 3rem;
+        text-align: left;
+      }
+      .boss-tag {
+        background: var(--accent-crimson);
+        color: white;
+        padding: 4px 12px;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        display: inline-block;
+        margin-bottom: 1rem;
+      }
+      .top-damage { display: flex; justify-content: center; gap: 2rem; margin-top: 2rem; font-family: var(--font-display); }
+      .rank { padding: 1rem 2rem; background: rgba(0, 0, 0, 0.4); border-radius: 10px; border: 1px solid var(--accent-crimson); }
+
+      footer {
+        padding: 4rem 2rem;
+        text-align: center;
+        border-top: 1px solid var(--surface);
+        color: var(--text-dim);
+        font-size: 0.9rem;
+        background: var(--bg-deep);
+      }
+
+      .reveal { opacity: 0; transform: translateY(30px); transition: all 0.8s ease-out; }
+      .reveal.active { opacity: 1; transform: translateY(0); }
+
+      /* ==========================================================================
+         ULTRA STORE SYSTEM
+         ========================================================================== */
+      .store-overlay {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        backdrop-filter: blur(25px);
+        z-index: 2000;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+      }
+      .store-container {
+        background: var(--surface);
+        width: 100%;
+        max-width: 1200px;
+        height: 90vh;
+        border-radius: 30px;
+        border: 1px solid var(--glass-border);
+        position: relative;
+        display: flex;
+        overflow: hidden;
+        box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
+      }
+      .store-sidebar {
+        width: 300px;
+        background: rgba(0, 0, 0, 0.3);
+        border-right: 1px solid var(--glass-border);
+        display: flex;
+        flex-direction: column;
+        padding: 2rem 1.5rem;
+      }
+      .store-logo-area { text-align: center; margin-bottom: 3rem; }
+      .store-logo-area h2 { font-size: 1.4rem; color: var(--text-main); }
+      .store-logo-area span { color: var(--accent-neon); }
+
+      .category-list { display: flex; flex-direction: column; gap: 0.75rem; }
+      .category-item {
+        padding: 1rem 1.2rem;
+        border-radius: 12px;
+        cursor: pointer;
+        font-family: var(--font-display);
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        transition: all 0.3s ease;
+        color: var(--text-dim);
+        border: 1px solid transparent;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .category-item:hover { background: var(--glass); color: var(--text-main); }
+      .category-item.active {
+        background: rgba(0, 243, 255, 0.1);
+        color: var(--accent-neon);
+        border-color: rgba(0, 243, 255, 0.3);
+        box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+      }
+
+      .store-main { flex: 1; display: flex; flex-direction: column; background: rgba(255, 255, 255, 0.01); }
+      .store-top-bar {
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid var(--glass-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.1);
+      }
+      .cart-status {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        background: var(--glass);
+        padding: 0.6rem 1.2rem;
+        border-radius: 50px;
+        border: 1px solid var(--glass-border);
+        transition: all 0.3s;
+      }
+      .cart-status:hover { border-color: var(--accent-neon); background: rgba(0, 243, 255, 0.05); }
+      .cart-count {
+        background: var(--accent-crimson);
+        color: white;
+        font-size: 0.7rem;
+        font-weight: bold;
+        padding: 2px 6px;
+        border-radius: 10px;
+      }
+
+      .store-content { flex: 1; padding: 2rem; overflow-y: auto; }
+      .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+      }
+      .product-card {
+        background: var(--glass);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        cursor: pointer;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        backdrop-filter: blur(5px);
+      }
+      .product-card:hover {
+        transform: translateY(-10px);
+        border-color: var(--accent-neon);
+        background: rgba(255, 255, 255, 0.05);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      }
+      .product-card.featured {
+        border: 2px solid var(--accent-crimson);
+        background: linear-gradient(135deg, rgba(255,0,60,0.1) 0%, rgba(15,15,26,1) 100%);
+      }
+      .featured-badge {
+        position: absolute;
+        top: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--accent-crimson);
+        color: white;
+        font-size: 0.65rem;
+        font-weight: bold;
+        padding: 4px 12px;
+        border-radius: 50px;
+        text-transform: uppercase;
+        box-shadow: 0 4px 10px rgba(255, 0, 60, 0.4);
+      }
+      .product-card h3 { font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--text-main); }
+      .product-card .price {
+        font-size: 2rem;
+        font-weight: 900;
+        color: var(--accent-neon);
+        margin-bottom: 1.5rem;
+        display: block;
+      }
+      .btn-add-cart {
+        margin-top: auto;
+        background: var(--accent-neon);
+        color: var(--bg-deep);
+        padding: 0.8rem;
+        border-radius: 12px;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        transition: all 0.3s;
+        border: none;
+        cursor: pointer;
+      }
+      .btn-add-cart:hover { background: white; transform: scale(1.05); }
+
+      .cart-overlay {
+        position: absolute;
+        top: 0; right: 0;
+        width: 400px; height: 100%;
+        background: var(--surface);
+        border-left: 1px solid var(--glass-border);
+        display: none;
+        flex-direction: column;
+        z-index: 3000;
+        box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+        animation: slideIn 0.3s ease-out;
+      }
+      @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+      .cart-header {
+        padding: 2rem;
+        border-bottom: 1px solid var(--glass-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .cart-items { flex: 1; overflow-y: auto; padding: 2rem; }
+      .cart-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--glass-border);
+        font-size: 0.9rem;
+      }
+      .cart-item-info h4 { font-size: 1rem; text-transform: none; font-weight: bold; }
+      .cart-item-info span { color: var(--accent-neon); font-family: var(--font-mono); }
+      .btn-remove {
+        background: none;
+        border: none;
+        color: var(--accent-crimson);
+        cursor: pointer;
+        font-size: 1.2rem;
+      }
+
+      .cart-footer {
+        padding: 2rem;
+        background: rgba(0, 0, 0, 0.2);
+        border-top: 1px solid var(--glass-border);
+      }
+      .cart-total {
+        display: flex;
+        justify-content: space-between;
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 1.5rem;
+      }
+
+      .coupon-box { display: flex; gap: 8px; margin-bottom: 1.5rem; }
+      .coupon-input {
+        flex: 1;
+        background: var(--bg-deep);
+        border: 1px solid var(--glass-border);
+        padding: 0.6rem;
+        border-radius: 8px;
+        color: white;
+        font-family: var(--font-mono);
+        outline: none;
+      }
+      .coupon-btn {
+        background: var(--surface-light);
+        border: 1px solid var(--glass-border);
+        color: white;
+        padding: 0 1rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-weight: bold;
+      }
+      .coupon-btn:hover { background: var(--accent-neon); color: var(--bg-deep); }
+      .coupon-msg { font-size: 0.75rem; text-align: center; margin-bottom: 1rem; min-height: 1rem; }
+      .msg-success { color: #00ff88; }
+      .msg-error { color: var(--accent-crimson); }
+
+      .btn-checkout {
+        width: 100%;
+        background: var(--accent-crimson);
+        color: white;
+        padding: 1rem;
+        border-radius: 12px;
+        border: none;
+        font-weight: bold;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+      .btn-checkout:hover { transform: scale(1.02); box-shadow: 0 0 20px rgba(255,0,60,0.4); }
+
+      .payment-modal {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.9);
+        z-index: 4000;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+      }
+      .payment-card {
+        background: var(--surface);
+        max-width: 600px;
+        width: 100%;
+        padding: 3rem;
+        border-radius: 30px;
+        border: 1px solid var(--accent-neon);
+        text-align: center;
+        position: relative;
+      }
+      .payment-card h3 { font-size: 2rem; margin-bottom: 1rem; color: var(--accent-neon); }
+      .pix-box {
+        background: #000;
+        border: 2px dashed var(--accent-neon);
+        padding: 2rem;
+        margin: 2rem 0;
+        border-radius: 15px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+      }
+      .pix-qrcode {
+        width: 200px;
+        height: 200px;
+        background: white;
+        padding: 10px;
+        border-radius: 8px;
+      }
+      .pix-key { font-family: var(--font-mono); font-size: 1.3rem; display: block; margin-bottom: 0.5rem; }
+      .discord-link {
+        background: rgba(88, 101, 242, 0.1);
+        border: 1px solid #5865f2;
+        padding: 1rem;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        align-items: center;
+      }
+      .discord-link a { color: var(--accent-neon); font-weight: bold; text-decoration: none; }
+
+      .close-store {
+        position: absolute;
+        top: 20px; right: 20px;
+        font-size: 2rem;
+        color: var(--text-dim);
+        cursor: pointer;
+        z-index: 10;
+      }
+
+      @media (max-width: 768px) {
+        nav { display: none; }
+        .store-sidebar { width: 80px; padding: 2rem 0.5rem; }
+        .store-logo-area, .nav-category span { display: none; }
+        .nav-category { justify-content: center; padding: 1rem; }
+        .cart-overlay { width: 100%; }
+        .glitch-text { font-size: 3rem; }
+      }
+    
+      /* ==========================================================================
+         AUTH + ADMIN
+         ========================================================================== */
+      .auth-area { display: flex; align-items: center; gap: 0.6rem; }
+      .btn-auth {
+        background: transparent;
+        border: 1px solid var(--glass-border);
+        color: var(--text-main);
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: 0.3s;
+        font-family: var(--font-main);
+      }
+      .btn-auth:hover { border-color: var(--accent-neon); color: var(--accent-neon); }
+      .btn-auth.primary { background: var(--accent-neon); color: var(--bg-deep); border-color: var(--accent-neon); }
+      .btn-auth.primary:hover { background: #fff; color: var(--bg-deep); }
+      .btn-auth.danger { border-color: var(--accent-crimson); color: var(--accent-crimson); }
+      .btn-auth.danger:hover { background: var(--accent-crimson); color: #fff; }
+      .user-chip {
+        font-size: 0.85rem;
+        color: var(--text-main);
+        padding: 0.4rem 0.9rem;
+        background: var(--glass);
+        border: 1px solid var(--glass-border);
+        border-radius: 50px;
+      }
+      .user-chip.admin { border-color: var(--accent-crimson); color: var(--accent-crimson); }
+
+      .modal-bg {
+        position: fixed; inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(8px);
+        z-index: 5000;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+      }
+      .modal-card {
+        background: var(--surface);
+        border: 1px solid var(--accent-neon);
+        border-radius: 24px;
+        width: 100%;
+        max-width: 440px;
+        padding: 2rem;
+        position: relative;
+        max-height: 92vh;
+        overflow-y: auto;
+        text-align: left;
+      }
+      .modal-card.wide { max-width: 1000px; }
+      .modal-card h3 { font-family: var(--font-display); color: var(--accent-neon); margin-bottom: 1rem; font-size: 1.5rem; }
+      .auth-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+      .auth-tabs button {
+        flex: 1; padding: 0.7rem; border-radius: 12px; cursor: pointer;
+        background: var(--glass); border: 1px solid var(--glass-border);
+        color: var(--text-dim); font-weight: 700; font-family: var(--font-main);
+      }
+      .auth-tabs button.active { background: rgba(0, 243, 255, 0.1); color: var(--accent-neon); border-color: rgba(0, 243, 255, 0.4); }
+      .auth-notice { font-size: 0.85rem; color: #ffcc00; margin-bottom: 1rem; min-height: 0; }
+      .field { margin-bottom: 1rem; }
+      .field label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.3rem; font-weight: 600; }
+      .field-input {
+        width: 100%;
+        background: var(--bg-deep);
+        border: 1px solid var(--glass-border);
+        padding: 0.75rem 0.9rem;
+        border-radius: 10px;
+        color: #fff;
+        font-family: var(--font-main);
+        outline: none;
+        font-size: 0.95rem;
+      }
+      .field-input:focus { border-color: var(--accent-neon); }
+      .form-err { color: var(--accent-crimson); font-size: 0.85rem; min-height: 1.2rem; margin-bottom: 0.5rem; }
+      .btn-submit {
+        width: 100%; padding: 0.9rem; border: none; border-radius: 12px; cursor: pointer;
+        background: var(--accent-neon); color: var(--bg-deep);
+        font-weight: bold; text-transform: uppercase; font-family: var(--font-main);
+        transition: 0.3s;
+      }
+      .btn-submit:hover { background: #fff; }
+      .btn-row { display: flex; gap: 0.75rem; }
+      .btn-row .btn-submit.secondary { background: var(--surface-light); color: var(--text-main); border: 1px solid var(--glass-border); }
+
+      .table-wrap { overflow-x: auto; margin-top: 1rem; border: 1px solid var(--glass-border); border-radius: 12px; }
+      .user-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+      .user-table th, .user-table td { padding: 0.8rem 1rem; text-align: left; border-bottom: 1px solid var(--glass-border); white-space: nowrap; }
+      .user-table th { background: rgba(0, 0, 0, 0.3); color: var(--accent-neon); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
+      .user-table tr:last-child td { border-bottom: none; }
+      .user-table .mono { font-family: var(--font-mono); }
+      .user-table .actions { display: flex; gap: 0.5rem; }
+      .role-tag { padding: 2px 10px; border-radius: 50px; font-size: 0.7rem; font-weight: bold; border: 1px solid var(--glass-border); color: var(--text-dim); }
+      .role-tag.admin { border-color: var(--accent-crimson); color: var(--accent-crimson); }
+      .hint { font-size: 0.78rem; color: var(--text-dim); margin-top: 1rem; }
+      .orders-list { list-style: none; font-size: 0.82rem; color: var(--text-dim); max-height: 150px; overflow-y: auto; border: 1px solid var(--glass-border); border-radius: 10px; padding: 0.6rem 0.9rem; margin-bottom: 1rem; }
+      .orders-list li { padding: 0.3rem 0; border-bottom: 1px dashed var(--glass-border); }
+      .orders-list li:last-child { border-bottom: none; }
+
+      .toast {
+        position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+        background: var(--surface-light); border: 1px solid var(--accent-neon);
+        color: #fff; padding: 0.9rem 1.5rem; border-radius: 12px; z-index: 6000;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6); font-size: 0.9rem;
+      }
+      @media (max-width: 768px) {
+        header { padding: 1rem 4%; }
+        .logo { font-size: 1.3rem; }
+        .btn-auth { padding: 0.4rem 0.7rem; }
+        .user-chip { display: none; }
+      }
+    </style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=JetBrains+Mono&family=Noto+Sans+JP:wght@900&display=swap" />
+</head>
+<body onmousemove="parallax(event)">
+    <div id="bg-image-container"></div>
+    <div id="bg-overlay"></div>
+
+    <header>
+      <a href="#" class="logo">CLAN <span>JAPÃO</span></a>
+      <nav>
+        <ul>
+          <li><a href="#join">Como Jogar</a></li>
+          <li><a href="#rules">Regras</a></li>
+          <li><a href="#staff">Equipe</a></li>
+          <li><a href="#features">Funcionalidades</a></li>
+          <li><a href="#boss">Boss</a></li>
+          <li><a onclick="openStore()">🛒 Loja VIP</a></li>
+        </ul>
+      </nav>
+      <div id="authArea" class="auth-area"></div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <h1 class="glitch-text">CLAN JAPÃO</h1>
+        <p>Entre em um mundo de honra, estratégia e construção. O servidor definitivo para quem busca a excelência no Minecraft.</p>
+        <a href="#join" class="cta-button">Começar Jornada</a>
+      </section>
+
+      <section id="join" class="server-section">
+        <h2 class="section-title reveal">Como Jogar</h2>
+        <div class="ip-grid">
+          <div class="ip-card reveal" onclick="copyIp('japanclan.minecraft.ceu.gg:21074', this)">
+            <h3>JAVA EDITION</h3>
+            <span class="ip-address">japanclan.minecraft.ceu.gg:21074</span>
+            <span class="copy-hint">Clique para copiar</span>
+          </div>
+          <div class="ip-card reveal" onclick="copyIp('bedrock.ceu.gg:21074', this)">
+            <h3>BEDROCK EDITION</h3>
+            <span class="ip-address">bedrock.ceu.gg:21074</span>
+            <span class="copy-hint">Clique para copiar</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="rules" class="server-section">
+        <h2 class="section-title reveal">📜 Regras do Clã</h2>
+        <div class="rules-container reveal">
+          <ul class="rules-list">
+            <li>Sem construções inapropriadas.</li>
+            <li>Respeite todos os membros.</li>
+            <li>Sem Coisas Gulosas no server.</li>
+            <li>Respeite os ADM.</li>
+            <li>Sem hacks ou cheats.</li>
+            <li>Divirta-se!</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="staff" class="server-section">
+        <h2 class="section-title reveal">👥 Nossa Equipe</h2>
+        <div class="staff-grid">
+          <div class="staff-card reveal">
+            <div class="staff-avatar"><img src="flawess2_site_menor.png" alt="FlawlessClock"></div>
+            <div class="staff-name">FlawlessClock</div>
+            <div class="staff-role">Fundador</div>
+          </div>
+          <div class="staff-card reveal">
+            <div class="staff-avatar"><img src="ArthurGG_site_menor.png" alt="ArthurGG"></div>
+            <div class="staff-name">ArthurGG__</div>
+            <div class="staff-role">Dono</div>
+          </div>
+          <div class="staff-card reveal">
+            <div class="staff-avatar"><img src="LixGG_site_menor.png" alt="LixGG"></div>
+            <div class="staff-name">LixGG</div>
+            <div class="staff-role">Dono</div>
+          </div>
+          <div class="staff-card reveal">
+            <div class="staff-avatar"><img src="eu_site_menor.png" alt="HarryDev"></div>
+            <div class="staff-name">HarryDev</div>
+            <div class="staff-role">Dono</div>
+          </div>
+          <div class="staff-card reveal">
+            <div class="staff-avatar"><img src="ItzGPT_site_menor.png" alt="ItzGP"></div>
+            <div class="staff-name">ItzGP</div>
+            <div class="staff-role">SubDono</div>
+          </div>
+          <div class="staff-card reveal">
+            <div class="staff-avatar"><img src="Nicollas_site_menor.png" alt="Nicollas"></div>
+            <div class="staff-name">Nicollas</div>
+            <div class="staff-role">SubDono</div>
+          </div>
+          <div class="staff-card reveal">
+            <div class="staff-avatar"><img src="Toguim_site_menor.png" alt="Toguim"></div>
+            <div class="staff-name">Toguim</div>
+            <div class="staff-role">Admin</div>
+          </div>
+          <div class="staff-card reveal">
+            <div class="staff-avatar"><img src="gato_site_menor.png" alt="Nicau389x"></div>
+            <div class="staff-name">Nicau389x</div>
+            <div class="staff-role">Mod</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="features" class="server-section">
+        <h2 class="section-title reveal">📢 Funcionalidades</h2>
+        <div class="features-grid">
+          <div class="feature-card reveal">
+            <h4>🤝 Aliança <span class="cmd-tag">/alianca</span></h4>
+            <p>Permite formar alianças estratégicas com outros jogadores.</p>
+          </div>
+          <div class="feature-card reveal">
+            <h4>🎯 Contrato <span class="cmd-tag">/contrato</span></h4>
+            <p>Crie contratos com recompensa para eliminar alvos.</p>
+          </div>
+          <div class="feature-card reveal">
+            <h4>🙈 Invisibilidade <span class="cmd-tag">/escondernick</span></h4>
+            <p>Oculte seu nickname para missões secretas.</p>
+          </div>
+          <div class="feature-card reveal">
+            <h4>👀 Visibilidade <span class="cmd-tag">/mostrarnick</span></h4>
+            <p>Volte a exibir seu nickname para todos.</p>
+          </div>
+          <div class="feature-card reveal">
+            <h4>🎉 Eventos <span class="cmd-tag">/evento entrar</span></h4>
+            <p>Comando oficial para participar de todos os eventos.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="boss" class="server-section">
+        <h2 class="section-title reveal">👹 O Boss do Império</h2>
+        <div class="boss-info reveal">
+          <span class="boss-tag">Atualização do Boss</span>
+          <h3>Habilidade de Invisibilidade</h3>
+          <p>O Boss agora desaparece por <strong>5 segundos</strong>. Cuidado! Cooldown de 25s.</p>
+          <div style="margin-top: 2rem; color: #ffcc00; font-weight: bold">⚠️ Status: Em manutenção.</div>
+          <h4 style="margin-top: 2rem; color: var(--accent-neon)">🏆 Top Damage</h4>
+          <div class="top-damage">
+            <div class="rank">🥇 1º</div>
+            <div class="rank">🥈 2º</div>
+            <div class="rank">🥉 3º</div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ULTRA STORE OVERLAY -->
+    <div id="storeOverlay" class="store-overlay">
+      <div class="store-container">
+        <span class="close-store" onclick="closeStore()">&times;</span>
+
+        <div class="store-sidebar">
+          <div class="store-logo-area">
+            <h2>CLAN <span>JAPÃO</span></h2>
+            <p style="font-size: 0.7rem; color: var(--text-dim)">STORE PREMIUM</p>
+          </div>
+          <div class="category-list">
+            <div class="category-item active" onclick="filterStore('vips', this)">💎 <span>Planos VIP</span></div>
+            <div class="category-item" onclick="filterStore('utility', this)">🛠️ <span>Minecraft</span></div>
+            <div class="category-item" onclick="filterStore('discord', this)">💬 <span>Discord</span></div>
+          </div>
+        </div>
+
+        <div class="store-main">
+          <div class="store-top-bar">
+            <h3 id="categoryTitle">Planos VIP</h3>
+            <div class="cart-status" onclick="toggleCart()">
+              🛒 Carrinho <span id="cartCount" class="cart-count">0</span>
+            </div>
+          </div>
+
+          <div class="store-content">
+            <div id="productGrid" class="product-grid"></div>
+          </div>
+        </div>
+
+        <!-- CART PANEL -->
+        <div id="cartPanel" class="cart-overlay">
+          <div class="cart-header">
+            <h3>Seu Carrinho</h3>
+            <span style="cursor:pointer" onclick="toggleCart()">✕</span>
+          </div>
+          <div id="cartItems" class="cart-items">
+            <p style="text-align:center; color:var(--text-dim)">Carrinho vazio...</p>
+          </div>
+          <div class="cart-footer">
+            <div class="cart-total">
+              <span>Total:</span>
+              <span id="cartTotal">R$ 0,00</span>
+            </div>
+            <div class="coupon-box">
+              <input type="text" id="couponInput" class="coupon-input" placeholder="CUPOM">
+              <button class="coupon-btn" onclick="applyCoupon()">Aplicar</button>
+            </div>
+            <div id="couponMsg" class="coupon-msg"></div>
+            <button class="btn-checkout" onclick="openPayment()">Finalizar Compra</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAYMENT MODAL -->
+    <div id="paymentModal" class="payment-modal">
+      <div class="payment-card">
+        <span class="close-store" onclick="closePayment()">&times;</span>
+        <h3>Finalizar Pagamento</h3>
+        <p>Sua compra foi processada. Utilize o QR Code ou a chave PIX abaixo:</p>
+        <div class="pix-box">
+          <img id="pixQRCode" src="" alt="QR Code PIX" class="pix-qrcode" style="display:none;">
+          <span class="pix-key">bernardocamposbezerra@gmail.com</span>
+          <div style="font-size: 0.9rem; color: var(--text-dim);">ou 1226315371</div>
+        </div>
+        <div class="discord-link">
+          <span>📢 Envie o comprovante no Discord para ativação:</span>
+          <a href="https://discord.gg/W4r98Yjtj" target="_blank">Abrir Ticket →</a>
+        </div>
+      </div>
+    </div>
+
+        <!-- AUTH MODAL -->
+    <div id="authModal" class="modal-bg" onclick="if(event.target===this)closeAuth()">
+      <div class="modal-card">
+        <span class="close-store" onclick="closeAuth()">&times;</span>
+        <h3 id="authTitle">Entrar</h3>
+        <div class="auth-tabs">
+          <button id="tabLogin" class="active" onclick="switchAuth('login')">Entrar</button>
+          <button id="tabRegister" onclick="switchAuth('register')">Cadastrar</button>
+        </div>
+        <p id="authNotice" class="auth-notice"></p>
+
+        <form id="loginForm" onsubmit="return doLogin(event)" autocomplete="on">
+          <div class="field"><label>Email</label><input id="loginEmail" class="field-input" type="email" autocomplete="username" required></div>
+          <div class="field"><label>Senha</label><input id="loginPass" class="field-input" type="password" autocomplete="current-password" required></div>
+          <div id="loginErr" class="form-err"></div>
+          <button class="btn-submit" type="submit">Entrar</button>
+        </form>
+
+        <form id="registerForm" onsubmit="return doRegister(event)" style="display:none" autocomplete="on">
+          <div class="field"><label>Nick (3 a 20 caracteres)</label><input id="regNick" class="field-input" type="text" maxlength="20" required></div>
+          <div class="field"><label>Email</label><input id="regEmail" class="field-input" type="email" autocomplete="username" required></div>
+          <div class="field"><label>Senha (mínimo 6 caracteres)</label><input id="regPass" class="field-input" type="password" autocomplete="new-password" required></div>
+          <div class="field"><label>Confirmar senha</label><input id="regPass2" class="field-input" type="password" autocomplete="new-password" required></div>
+          <div id="regErr" class="form-err"></div>
+          <button class="btn-submit" type="submit">Criar conta</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ADMIN: USERS PANEL -->
+    <div id="adminModal" class="modal-bg" onclick="if(event.target===this)closeAdmin()">
+      <div class="modal-card wide">
+        <span class="close-store" onclick="closeAdmin()">&times;</span>
+        <h3>👥 Usuários cadastrados <span id="userCount" style="color:var(--text-dim);font-size:1rem"></span></h3>
+        <input id="userSearch" class="field-input" placeholder="Buscar por nick ou email..." oninput="renderUsers()">
+        <div class="table-wrap">
+          <table class="user-table">
+            <thead><tr><th>Nick</th><th>Email</th><th>Tipo</th><th>Cadastro</th><th>Compras</th><th>Ações</th></tr></thead>
+            <tbody id="userRows"></tbody>
+          </table>
+        </div>
+        <p class="hint">As senhas ficam guardadas apenas como hash: o admin não consegue ver a senha atual, mas pode definir uma nova.</p>
+      </div>
+    </div>
+
+    <!-- ADMIN: EDIT USER -->
+    <div id="editModal" class="modal-bg" style="z-index:5500" onclick="if(event.target===this)closeEdit()">
+      <div class="modal-card">
+        <span class="close-store" onclick="closeEdit()">&times;</span>
+        <h3>✏️ Editar conta</h3>
+        <form onsubmit="return saveEdit(event)" autocomplete="off">
+          <input type="hidden" id="editId">
+          <div class="field"><label>Nick</label><input id="editNick" class="field-input" type="text" maxlength="20" required></div>
+          <div class="field"><label>Email</label><input id="editEmail" class="field-input" type="email" required></div>
+          <div class="field"><label>Nova senha (deixe em branco para manter)</label><input id="editPass" class="field-input" type="text" autocomplete="off" placeholder="mínimo 6 caracteres"></div>
+          <div class="field"><label>Informações</label><div id="editInfo" style="font-size:0.85rem;color:var(--text-dim)"></div></div>
+          <div class="field"><label>Compras</label><ul id="editOrders" class="orders-list"></ul></div>
+          <div id="editErr" class="form-err"></div>
+          <div class="btn-row">
+            <button type="button" class="btn-submit secondary" onclick="closeEdit()">Cancelar</button>
+            <button type="submit" class="btn-submit">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <footer>
+      &copy; 2026 Clan Japão Minecraft Server. Não afiliado à Mojang AB.
+    </footer>
+
+    <script>
+      const storeData = {
+        vips: [
+          { id: 'v1', name: 'VIP', price: 10.00, perks: ['Tag [VIP]', 'Kit Inicial', 'Chat VIP'], featured: false },
+          { id: 'v2', name: 'VIP+', price: 15.00, perks: ['Tag [VIP+]', 'Kits VIP/VIP+', 'Comandos VIP', 'Prioridade'], featured: false },
+          { id: 'v3', name: 'Elite', price: 19.99, perks: ['Tag [Elite]', 'Kits Full', 'Teleporte Expandido'], featured: false },
+          { id: 'v4', name: 'Elite+', price: 24.00, perks: ['Tag [Elite+]', 'Acesso Total', 'Suporte Prioritário'], featured: true },
+          { id: 'v5', name: 'BETA', price: 30.99, perks: ['Tag [BETA]', 'Prioridade Máxima', 'Skins Exclusivas'], featured: false },
+          { id: 'v6', name: 'JAPAN', price: 40.99, perks: ['Tag [JAPAN]', 'Kits Lendários', 'Destaque Tab'], featured: false },
+        ],
+        utility: [
+          { id: 'u1', name: 'Unmute Minecraft', price: 5.00, perks: ['Voltar a falar no chat'], featured: false },
+          { id: 'u2', name: 'UnBan Minecraft', price: 15.00, perks: ['Voltar a jogar'], featured: false },
+        ],
+        discord: [
+          { id: 'd1', name: 'Unmute Discord', price: 5.00, perks: ['Falar no Discord'], featured: false },
+          { id: 'd2', name: 'UnBan Discord', price: 10.00, perks: ['Voltar ao servidor Discord'], featured: false },
+        ]
+      };
+
+      let cart = [];
+      let activeDiscount = 0;
+
+      function formatPrice(val) {
+        return "R$ " + val.toFixed(2).replace('.', ',');
+      }
+
+      function openStore() {
+        if (!currentUser()) { openAuth('login', 'Faça login para acessar a loja VIP.'); return; }
+        document.getElementById('storeOverlay').style.display = 'flex';
+        filterStore('vips', document.querySelector('.category-item'));
+      }
+
+      function closeStore() {
+        document.getElementById('storeOverlay').style.display = 'none';
+      }
+
+      function filterStore(category, element) {
+        document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
+        element.classList.add('active');
+        document.getElementById('categoryTitle').innerText = element.innerText;
+
+        const grid = document.getElementById('productGrid');
+        grid.innerHTML = '';
+
+        storeData[category].forEach(p => {
+          const card = document.createElement('div');
+          card.className = `product-card ${p.featured ? 'featured' : ''}`;
+          card.innerHTML = `
+            ${p.featured ? '<span class="featured-badge">Recomendado</span>' : ''}
+            <h3>${p.name}</h3>
+            <span class="price">${formatPrice(p.price)}</span>
+            <button class="btn-add-cart" onclick="addToCart('${category}', '${p.id}')">Adicionar ao Carrinho</button>
+          `;
+          grid.appendChild(card);
+        });
+      }
+
+      function addToCart(category, id) {
+        const product = storeData[category].find(p => p.id === id);
+        cart.push(product);
+        updateCartUI();
+
+        const btn = event.target;
+        const originalText = btn.innerText;
+        btn.innerText = '✓ Adicionado!';
+        btn.style.background = '#00ff88';
+        setTimeout(() => {
+          btn.innerText = originalText;
+          btn.style.background = 'var(--accent-neon)';
+        }, 1000);
+      }
+
+      function updateCartUI() {
+        document.getElementById('cartCount').innerText = cart.length;
+        const itemsDiv = document.getElementById('cartItems');
+        itemsDiv.innerHTML = '';
+
+        let total = 0;
+        cart.forEach((item, index) => {
+          total += item.price;
+          const div = document.createElement('div');
+          div.className = 'cart-item';
+          div.innerHTML = `
+            <div class="cart-item-info">
+              <h4>${item.name}</h4>
+              <span>${formatPrice(item.price)}</span>
+            </div>
+            <button class="btn-remove" onclick="removeFromCart(${index})">✕</button>
+          `;
+          itemsDiv.appendChild(div);
+        });
+
+        if(cart.length === 0) itemsDiv.innerHTML = '<p style="text-align:center; color:var(--text-dim)">Carrinho vazio...</p>';
+
+        const finalTotal = total * (1 - activeDiscount);
+        document.getElementById('cartTotal').innerText = isAdmin() ? 'R$ 0,00 (Admin)' : formatPrice(finalTotal);
+      }
+
+      function removeFromCart(index) {
+        cart.splice(index, 1);
+        updateCartUI();
+      }
+
+      function toggleCart() {
+        const panel = document.getElementById('cartPanel');
+        panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
+      }
+
+      function applyCoupon() {
+        const coupon = document.getElementById('couponInput').value.toUpperCase().trim();
+        const msg = document.getElementById('couponMsg');
+
+        if (coupon === 'HARRYDEV' || coupon === 'DONOSGG') {
+          activeDiscount = 1.0; // 100% de desconto
+          msg.innerText = 'Cupom aplicado! Valor zerado!';
+          msg.className = 'coupon-msg msg-success';
+        } else if (coupon === 'JAPAN') {
+          activeDiscount = 0.10;
+          msg.innerText = 'Cupom JAPAN aplicado! -10%';
+          msg.className = 'coupon-msg msg-success';
+        } else if (coupon === 'GG' || coupon === 'HARRY') {
+          activeDiscount = 0.15;
+          msg.innerText = `Cupom ${coupon} aplicado! -15%`;
+          msg.className = 'coupon-msg msg-success';
+        } else {
+          activeDiscount = 0;
+          msg.innerText = 'Cupom inválido!';
+          msg.className = 'coupon-msg msg-error';
+        }
+        updateCartUI();
+      }
+
+      function openPayment() {
+        if(cart.length === 0) return alert('Seu carrinho está vazio!');
+        if(!currentUser()) { openAuth('login', 'Faça login para finalizar a compra.'); return; }
+        if(isAdmin()) { adminCheckout(); return; }
+
+        // Calcular total final para o QR Code
+        let total = 0;
+        cart.forEach(item => total += item.price);
+        const finalTotal = total * (1 - activeDiscount);
+
+        recordOrder(finalTotal, false);
+        const qrImg = document.getElementById('pixQRCode');
+
+        if (finalTotal > 0) {
+            // Gerar QR Code dinâmico via API de terceiros (Mercado Pago/QuickChart)
+            // Usamos o QuickChart para criar um QR Code do texto da chave e valor
+            const pixData = `Chave: bernardocamposbezerra@gmail.com | Valor: ${finalTotal.toFixed(2)}`;
+            qrImg.src = `https://quickchart.io/qr?text=${encodeURIComponent(pixData)}&size=200`;
+            qrImg.style.display = 'block';
+        } else {
+            qrImg.style.display = 'none';
+        }
+
+        document.getElementById('paymentModal').style.display = 'flex';
+      }
+
+      function closePayment() {
+        document.getElementById('paymentModal').style.display = 'none';
+      }
+
+      function copyIp(text, element) {
+        navigator.clipboard.writeText(text).then(() => {
+          const hint = element.querySelector(".copy-hint");
+          const originalText = hint.innerText;
+          hint.innerText = "Copiado!";
+          hint.style.color = "var(--accent-neon)";
+          setTimeout(() => {
+            hint.innerText = originalText;
+            hint.style.color = "var(--text-dim)";
+          }, 2000);
+        });
+      }
+
+      function parallax(e) {
+        const bg = document.getElementById('bg-image-container');
+        if(!bg) return;
+        const x = (window.innerWidth / 2 - e.pageX) / 50;
+        const y = (window.innerHeight / 2 - e.pageY) / 50;
+        bg.style.transform = `scale(1.1) translate(${x}px, ${y}px)`;
+      }
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) entry.target.classList.add("active");
+        });
+      }, { threshold: 0.1 });
+      document.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
+
+      window.onclick = function (event) {
+        if (event.target == document.getElementById("storeOverlay")) closeStore();
+      };
+    
+      /* ==========================================================================
+         AUTH + ADMIN (armazenamento local no navegador)
+         ========================================================================== */
+      const USERS_KEY = 'cj_users', SESSION_KEY = 'cj_session', ORDERS_KEY = 'cj_orders';
+      const ADMIN_SEED = { nick: 'Admin', email: 'adminofc@gmail.com', salt: 'cjadm', hash: 'ef70e7446829958fc20f5838493b37d752008239773403b58c8f125497f6f8cd' };
+      const memStore = {};
+
+      function sha256(ascii){
+        var i,j;
+        function rightRotate(v,a){return (v>>>a)|(v<<(32-a));}
+        var maxWord=Math.pow(2,32), result='', words=[], asciiBitLength=ascii.length*8;
+        var hash=sha256.h=sha256.h||[], k=sha256.k=sha256.k||[], primeCounter=k.length;
+        var isComposite={};
+        for(var candidate=2;primeCounter<64;candidate++){
+          if(!isComposite[candidate]){
+            for(i=0;i<313;i+=candidate) isComposite[i]=candidate;
+            hash[primeCounter]=(Math.pow(candidate,.5)*maxWord)|0;
+            k[primeCounter++]=(Math.pow(candidate,1/3)*maxWord)|0;
+          }
+        }
+        ascii+='\x80';
+        while(ascii.length%64-56) ascii+='\x00';
+        for(i=0;i<ascii.length;i++){
+          j=ascii.charCodeAt(i);
+          if(j>>8) return;
+          words[i>>2]|=j<<((3-i)%4)*8;
+        }
+        words[words.length]=((asciiBitLength/maxWord)|0);
+        words[words.length]=(asciiBitLength);
+        for(j=0;j<words.length;){
+          var w=words.slice(j,j+=16), oldHash=hash;
+          hash=hash.slice(0,8);
+          for(i=0;i<64;i++){
+            var w15=w[i-15], w2=w[i-2];
+            var a=hash[0], e=hash[4];
+            var temp1=hash[7]+(rightRotate(e,6)^rightRotate(e,11)^rightRotate(e,25))+((e&hash[5])^((~e)&hash[6]))+k[i]+(w[i]=(i<16)?w[i]:(w[i-16]+(rightRotate(w15,7)^rightRotate(w15,18)^(w15>>>3))+w[i-7]+(rightRotate(w2,17)^rightRotate(w2,19)^(w2>>>10)))|0);
+            var temp2=(rightRotate(a,2)^rightRotate(a,13)^rightRotate(a,22))+((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));
+            hash=[(temp1+temp2)|0].concat(hash);
+            hash[4]=(hash[4]+temp1)|0;
+          }
+          for(i=0;i<8;i++) hash[i]=(hash[i]+oldHash[i])|0;
+        }
+        for(i=0;i<8;i++) for(j=3;j+1;j--){var b=(hash[i]>>(j*8))&255; result+=((b<16)?0:'')+b.toString(16);}
+        return result;
+      }
+      function hashPass(salt, pass) { return sha256(unescape(encodeURIComponent(salt + ':' + pass))); }
+      function randSalt() {
+        try { const a = new Uint8Array(8); crypto.getRandomValues(a); return Array.from(a, b => b.toString(16).padStart(2, '0')).join(''); }
+        catch (e) { return Math.random().toString(36).slice(2, 12); }
+      }
+
+      function dbGet(key, def) {
+        try { const raw = localStorage.getItem(key); if (raw !== null) return JSON.parse(raw); } catch (e) {}
+        return memStore[key] !== undefined ? memStore[key] : def;
+      }
+      function dbSet(key, val) {
+        memStore[key] = val;
+        try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
+      }
+      function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+      function newId(p) { return p + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+      function getUsers() { return dbGet(USERS_KEY, []); }
+      function validEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+
+      function ensureAdmin() {
+        const users = getUsers();
+        if (!users.some(u => u.role === 'admin')) {
+          users.unshift({ id: newId('u'), nick: ADMIN_SEED.nick, email: ADMIN_SEED.email, salt: ADMIN_SEED.salt, hash: ADMIN_SEED.hash, role: 'admin', createdAt: new Date().toISOString() });
+          dbSet(USERS_KEY, users);
+        }
+      }
+      function currentUser() {
+        const id = dbGet(SESSION_KEY, null);
+        return id ? (getUsers().find(u => u.id === id) || null) : null;
+      }
+      function isAdmin() { const u = currentUser(); return !!u && u.role === 'admin'; }
+
+      function toast(msg) {
+        const t = document.createElement('div');
+        t.className = 'toast';
+        t.innerText = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 3500);
+      }
+
+      function renderAuthArea() {
+        const area = document.getElementById('authArea');
+        const u = currentUser();
+        if (!u) {
+          area.innerHTML = '<button class="btn-auth" onclick="openAuth(\'login\')">Entrar</button>' +
+                           '<button class="btn-auth primary" onclick="openAuth(\'register\')">Cadastrar</button>';
+          return;
+        }
+        let html = `<span class="user-chip ${u.role === 'admin' ? 'admin' : ''}">${u.role === 'admin' ? '👑' : '👤'} ${esc(u.nick)}</span>`;
+        if (u.role === 'admin') html += '<button class="btn-auth danger" onclick="openAdmin()">👥 Usuários</button>';
+        html += '<button class="btn-auth" onclick="logout()">Sair</button>';
+        area.innerHTML = html;
+      }
+
+      /* ---------- modal login / cadastro ---------- */
+      function openAuth(mode, notice) {
+        document.getElementById('authModal').style.display = 'flex';
+        document.getElementById('authNotice').innerText = notice || '';
+        switchAuth(mode || 'login');
+      }
+      function closeAuth() { document.getElementById('authModal').style.display = 'none'; }
+      function switchAuth(mode) {
+        const login = mode === 'login';
+        document.getElementById('loginForm').style.display = login ? 'block' : 'none';
+        document.getElementById('registerForm').style.display = login ? 'none' : 'block';
+        document.getElementById('tabLogin').classList.toggle('active', login);
+        document.getElementById('tabRegister').classList.toggle('active', !login);
+        document.getElementById('authTitle').innerText = login ? 'Entrar' : 'Criar conta';
+        document.getElementById('loginErr').innerText = '';
+        document.getElementById('regErr').innerText = '';
+      }
+
+      function doRegister(e) {
+        e.preventDefault();
+        const nick = document.getElementById('regNick').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const pass = document.getElementById('regPass').value;
+        const pass2 = document.getElementById('regPass2').value;
+        const err = document.getElementById('regErr');
+
+        if (nick.length < 3 || nick.length > 20) { err.innerText = 'O nick precisa ter de 3 a 20 caracteres.'; return false; }
+        if (!validEmail(email)) { err.innerText = 'Digite um email válido.'; return false; }
+        if (pass.length < 6) { err.innerText = 'A senha precisa ter pelo menos 6 caracteres.'; return false; }
+        if (pass !== pass2) { err.innerText = 'As senhas não coincidem.'; return false; }
+
+        const users = getUsers();
+        if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) { err.innerText = 'Esse email já está cadastrado.'; return false; }
+        if (users.some(u => u.nick.toLowerCase() === nick.toLowerCase())) { err.innerText = 'Esse nick já está em uso.'; return false; }
+
+        const salt = randSalt();
+        const user = { id: newId('u'), nick, email, salt, hash: hashPass(salt, pass), role: 'user', createdAt: new Date().toISOString() };
+        users.push(user);
+        dbSet(USERS_KEY, users);
+        dbSet(SESSION_KEY, user.id);
+
+        e.target.reset();
+        closeAuth();
+        renderAuthArea();
+        toast('✅ Conta criada! Bem-vindo, ' + nick + '.');
+        return false;
+      }
+
+      function doLogin(e) {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+        const pass = document.getElementById('loginPass').value;
+        const err = document.getElementById('loginErr');
+        const user = getUsers().find(u => u.email.toLowerCase() === email);
+
+        if (!user || user.hash !== hashPass(user.salt, pass)) { err.innerText = 'Email ou senha incorretos.'; return false; }
+
+        dbSet(SESSION_KEY, user.id);
+        e.target.reset();
+        closeAuth();
+        renderAuthArea();
+        toast('👋 Olá, ' + user.nick + '!');
+        return false;
+      }
+
+      function logout() {
+        dbSet(SESSION_KEY, null);
+        cart = []; activeDiscount = 0;
+        updateCartUI();
+        closeStore(); closeAdmin(); closeEdit();
+        document.getElementById('cartPanel').style.display = 'none';
+        renderAuthArea();
+        toast('Você saiu da conta.');
+      }
+
+      /* ---------- pedidos ---------- */
+      function recordOrder(total, free) {
+        const u = currentUser();
+        if (!u) return;
+        const orders = dbGet(ORDERS_KEY, []);
+        orders.push({
+          id: newId('o'), uid: u.id, items: cart.map(i => i.name), total: total,
+          date: new Date().toISOString(),
+          status: free ? 'Concluído (admin, sem custo)' : 'Aguardando comprovante'
+        });
+        dbSet(ORDERS_KEY, orders);
+        cart = []; activeDiscount = 0;
+        const ci = document.getElementById('couponInput'); if (ci) ci.value = '';
+        const cm = document.getElementById('couponMsg'); if (cm) cm.innerText = '';
+        updateCartUI();
+      }
+
+      function adminCheckout() {
+        if (!isAdmin()) return;
+        recordOrder(0, true);
+        document.getElementById('cartPanel').style.display = 'none';
+        toast('✅ Compra concluída como admin! Tudo liberado sem custo.');
+      }
+
+      /* ---------- painel admin ---------- */
+      function openAdmin() {
+        if (!isAdmin()) return;
+        document.getElementById('userSearch').value = '';
+        renderUsers();
+        document.getElementById('adminModal').style.display = 'flex';
+      }
+      function closeAdmin() { document.getElementById('adminModal').style.display = 'none'; }
+
+      function renderUsers() {
+        if (!isAdmin()) return;
+        const q = (document.getElementById('userSearch').value || '').toLowerCase().trim();
+        const users = getUsers(), orders = dbGet(ORDERS_KEY, []);
+        const list = users.filter(u => !q || u.nick.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+        document.getElementById('userCount').innerText = '(' + users.length + ')';
+        document.getElementById('userRows').innerHTML = list.map(u => {
+          const n = orders.filter(o => o.uid === u.id).length;
+          const adm = u.role === 'admin';
+          return `<tr>
+            <td>${esc(u.nick)}</td>
+            <td class="mono">${esc(u.email)}</td>
+            <td>${adm ? '<span class="role-tag admin">ADMIN</span>' : '<span class="role-tag">Membro</span>'}</td>
+            <td>${new Date(u.createdAt).toLocaleString('pt-BR')}</td>
+            <td>${n}</td>
+            <td class="actions">
+              <button class="btn-auth" onclick="openEdit('${u.id}')">✏️ Ver / Editar</button>
+              ${adm ? '' : `<button class="btn-auth danger" onclick="deleteUser('${u.id}')">🗑️ Excluir</button>`}
+            </td>
+          </tr>`;
+        }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-dim)">Nenhum usuário encontrado.</td></tr>';
+      }
+
+      function openEdit(id) {
+        if (!isAdmin()) return;
+        const u = getUsers().find(x => x.id === id);
+        if (!u) return;
+        document.getElementById('editId').value = u.id;
+        document.getElementById('editNick').value = u.nick;
+        document.getElementById('editEmail').value = u.email;
+        document.getElementById('editPass').value = '';
+        document.getElementById('editErr').innerText = '';
+        document.getElementById('editInfo').innerHTML =
+          `Tipo: <strong>${u.role === 'admin' ? 'Admin' : 'Membro'}</strong> · Cadastro: ${new Date(u.createdAt).toLocaleString('pt-BR')}`;
+        const orders = dbGet(ORDERS_KEY, []).filter(o => o.uid === u.id).reverse();
+        document.getElementById('editOrders').innerHTML = orders.length
+          ? orders.map(o => `<li>${new Date(o.date).toLocaleString('pt-BR')} — ${o.items.map(esc).join(', ')} — <strong>${formatPrice(o.total)}</strong> — ${esc(o.status)}</li>`).join('')
+          : '<li>Nenhuma compra registrada.</li>';
+        document.getElementById('editModal').style.display = 'flex';
+      }
+      function closeEdit() { document.getElementById('editModal').style.display = 'none'; }
+
+      function saveEdit(e) {
+        e.preventDefault();
+        if (!isAdmin()) return false;
+        const id = document.getElementById('editId').value;
+        const nick = document.getElementById('editNick').value.trim();
+        const email = document.getElementById('editEmail').value.trim();
+        const pass = document.getElementById('editPass').value;
+        const err = document.getElementById('editErr');
+
+        if (nick.length < 3 || nick.length > 20) { err.innerText = 'O nick precisa ter de 3 a 20 caracteres.'; return false; }
+        if (!validEmail(email)) { err.innerText = 'Digite um email válido.'; return false; }
+        if (pass && pass.length < 6) { err.innerText = 'A nova senha precisa ter pelo menos 6 caracteres.'; return false; }
+
+        const users = getUsers();
+        const u = users.find(x => x.id === id);
+        if (!u) { err.innerText = 'Usuário não encontrado.'; return false; }
+        if (users.some(x => x.id !== id && x.email.toLowerCase() === email.toLowerCase())) { err.innerText = 'Esse email já está em uso por outra conta.'; return false; }
+        if (users.some(x => x.id !== id && x.nick.toLowerCase() === nick.toLowerCase())) { err.innerText = 'Esse nick já está em uso por outra conta.'; return false; }
+
+        u.nick = nick;
+        u.email = email;
+        if (pass) { u.salt = randSalt(); u.hash = hashPass(u.salt, pass); }
+        dbSet(USERS_KEY, users);
+
+        closeEdit();
+        renderUsers();
+        renderAuthArea();
+        toast('✅ Conta atualizada.');
+        return false;
+      }
+
+      function deleteUser(id) {
+        if (!isAdmin()) return;
+        const users = getUsers();
+        const u = users.find(x => x.id === id);
+        if (!u) return;
+        if (u.role === 'admin') { alert('A conta admin não pode ser excluída.'); return; }
+        if (!confirm('Excluir a conta "' + u.nick + '" (' + u.email + ')? Essa ação não pode ser desfeita.')) return;
+        dbSet(USERS_KEY, users.filter(x => x.id !== id));
+        dbSet(ORDERS_KEY, dbGet(ORDERS_KEY, []).filter(o => o.uid !== id));
+        renderUsers();
+        toast('🗑️ Conta excluída.');
+      }
+
+      document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        if (document.getElementById('editModal').style.display === 'flex') return closeEdit();
+        if (document.getElementById('adminModal').style.display === 'flex') return closeAdmin();
+        if (document.getElementById('authModal').style.display === 'flex') return closeAuth();
+      });
+
+      ensureAdmin();
+      renderAuthArea();
+    </script>
+</body>
+</html>
