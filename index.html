@@ -1197,81 +1197,43 @@
       };
     
       /* ==========================================================================
-         AUTH + ADMIN (armazenamento local no navegador)
+         AUTH + ADMIN (via API no servidor)
          ========================================================================== */
-      const USERS_KEY = 'cj_users', SESSION_KEY = 'cj_session', ORDERS_KEY = 'cj_orders';
-      const ADMIN_SEED = { nick: 'Admin', email: 'adminofc@gmail.com', salt: 'cjadm', hash: 'ef70e7446829958fc20f5838493b37d752008239773403b58c8f125497f6f8cd' };
-      const memStore = {};
+      let me = null;           // usuário logado (vem do servidor)
+      let usersCache = [];
 
-      function sha256(ascii){
-        var i,j;
-        function rightRotate(v,a){return (v>>>a)|(v<<(32-a));}
-        var maxWord=Math.pow(2,32), result='', words=[], asciiBitLength=ascii.length*8;
-        var hash=sha256.h=sha256.h||[], k=sha256.k=sha256.k||[], primeCounter=k.length;
-        var isComposite={};
-        for(var candidate=2;primeCounter<64;candidate++){
-          if(!isComposite[candidate]){
-            for(i=0;i<313;i+=candidate) isComposite[i]=candidate;
-            hash[primeCounter]=(Math.pow(candidate,.5)*maxWord)|0;
-            k[primeCounter++]=(Math.pow(candidate,1/3)*maxWord)|0;
+      async function api(path, opts) {
+        opts = opts || {};
+        let res;
+        try {
+          res = await fetch(path, {
+            method: opts.method || 'GET',
+            headers: opts.body ? { 'Content-Type': 'application/json' } : undefined,
+            body: opts.body ? JSON.stringify(opts.body) : undefined,
+            credentials: 'same-origin'
+          });
+        } catch (e) {
+          throw new Error('Sem conexão com o servidor. O site precisa ser aberto pelo link da Vercel, não pelo arquivo no PC.');
+        }
+        let data = null;
+        try { data = await res.json(); } catch (e) {}
+        if (!res.ok) {
+          if (res.status === 401 && me) { me = null; renderAuthArea(); }
+          if (!data) {
+            throw new Error(res.status === 404
+              ? 'A API não foi encontrada. O site precisa estar publicado na Vercel com a pasta api/ (GitHub Pages não roda a API).'
+              : 'Erro ao falar com o servidor.');
           }
+          if (res.status >= 500) throw new Error((data.error || 'Erro no servidor.') + ' Abra /api/health no seu site para ver o que falta configurar.');
+          throw new Error(data.error || 'Erro ao falar com o servidor.');
         }
-        ascii+='\x80';
-        while(ascii.length%64-56) ascii+='\x00';
-        for(i=0;i<ascii.length;i++){
-          j=ascii.charCodeAt(i);
-          if(j>>8) return;
-          words[i>>2]|=j<<((3-i)%4)*8;
-        }
-        words[words.length]=((asciiBitLength/maxWord)|0);
-        words[words.length]=(asciiBitLength);
-        for(j=0;j<words.length;){
-          var w=words.slice(j,j+=16), oldHash=hash;
-          hash=hash.slice(0,8);
-          for(i=0;i<64;i++){
-            var w15=w[i-15], w2=w[i-2];
-            var a=hash[0], e=hash[4];
-            var temp1=hash[7]+(rightRotate(e,6)^rightRotate(e,11)^rightRotate(e,25))+((e&hash[5])^((~e)&hash[6]))+k[i]+(w[i]=(i<16)?w[i]:(w[i-16]+(rightRotate(w15,7)^rightRotate(w15,18)^(w15>>>3))+w[i-7]+(rightRotate(w2,17)^rightRotate(w2,19)^(w2>>>10)))|0);
-            var temp2=(rightRotate(a,2)^rightRotate(a,13)^rightRotate(a,22))+((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));
-            hash=[(temp1+temp2)|0].concat(hash);
-            hash[4]=(hash[4]+temp1)|0;
-          }
-          for(i=0;i<8;i++) hash[i]=(hash[i]+oldHash[i])|0;
-        }
-        for(i=0;i<8;i++) for(j=3;j+1;j--){var b=(hash[i]>>(j*8))&255; result+=((b<16)?0:'')+b.toString(16);}
-        return result;
-      }
-      function hashPass(salt, pass) { return sha256(unescape(encodeURIComponent(salt + ':' + pass))); }
-      function randSalt() {
-        try { const a = new Uint8Array(8); crypto.getRandomValues(a); return Array.from(a, b => b.toString(16).padStart(2, '0')).join(''); }
-        catch (e) { return Math.random().toString(36).slice(2, 12); }
+        return data || {};
       }
 
-      function dbGet(key, def) {
-        try { const raw = localStorage.getItem(key); if (raw !== null) return JSON.parse(raw); } catch (e) {}
-        return memStore[key] !== undefined ? memStore[key] : def;
-      }
-      function dbSet(key, val) {
-        memStore[key] = val;
-        try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
-      }
       function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
-      function newId(p) { return p + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
-      function getUsers() { return dbGet(USERS_KEY, []); }
       function validEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
-
-      function ensureAdmin() {
-        const users = getUsers();
-        if (!users.some(u => u.role === 'admin')) {
-          users.unshift({ id: newId('u'), nick: ADMIN_SEED.nick, email: ADMIN_SEED.email, salt: ADMIN_SEED.salt, hash: ADMIN_SEED.hash, role: 'admin', createdAt: new Date().toISOString() });
-          dbSet(USERS_KEY, users);
-        }
-      }
-      function currentUser() {
-        const id = dbGet(SESSION_KEY, null);
-        return id ? (getUsers().find(u => u.id === id) || null) : null;
-      }
-      function isAdmin() { const u = currentUser(); return !!u && u.role === 'admin'; }
+      function currentUser() { return me; }
+      function isAdmin() { return !!me && me.role === 'admin'; }
 
       function toast(msg) {
         const t = document.createElement('div');
@@ -1283,16 +1245,15 @@
 
       function renderAuthArea() {
         const area = document.getElementById('authArea');
-        const u = currentUser();
-        if (!u) {
+        if (!me) {
           area.innerHTML = '<button class="btn-auth" onclick="openAuth(\'login\')">Entrar</button>' +
                            '<button class="btn-auth primary" onclick="openAuth(\'register\')">Cadastrar</button>';
           return;
         }
-        let html = `<span class="user-chip ${u.role === 'admin' ? 'admin' : ''}">${u.role === 'admin' ? '👑' : '👤'} ${esc(u.nick)}</span>`;
-        if (u.role === 'admin') html += '<button class="btn-auth danger" onclick="openAdmin()">👥 Usuários</button>';
-        html += '<button class="btn-auth" onclick="logout()">Sair</button>';
-        area.innerHTML = html;
+        let h = `<span class="user-chip ${me.role === 'admin' ? 'admin' : ''}">${me.role === 'admin' ? '👑' : '👤'} ${esc(me.nick)}</span>`;
+        if (me.role === 'admin') h += '<button class="btn-auth danger" onclick="openAdmin()">👥 Usuários</button>';
+        h += '<button class="btn-auth" onclick="logout()">Sair</button>';
+        area.innerHTML = h;
       }
 
       /* ---------- modal login / cadastro ---------- */
@@ -1313,8 +1274,10 @@
         document.getElementById('regErr').innerText = '';
       }
 
-      function doRegister(e) {
+      async function doRegister(e) {
         e.preventDefault();
+        const form = e.target;
+        const btn = form.querySelector('button[type=submit]');
         const nick = document.getElementById('regNick').value.trim();
         const email = document.getElementById('regEmail').value.trim();
         const pass = document.getElementById('regPass').value;
@@ -1326,42 +1289,47 @@
         if (pass.length < 6) { err.innerText = 'A senha precisa ter pelo menos 6 caracteres.'; return false; }
         if (pass !== pass2) { err.innerText = 'As senhas não coincidem.'; return false; }
 
-        const users = getUsers();
-        if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) { err.innerText = 'Esse email já está cadastrado.'; return false; }
-        if (users.some(u => u.nick.toLowerCase() === nick.toLowerCase())) { err.innerText = 'Esse nick já está em uso.'; return false; }
-
-        const salt = randSalt();
-        const user = { id: newId('u'), nick, email, salt, hash: hashPass(salt, pass), role: 'user', createdAt: new Date().toISOString() };
-        users.push(user);
-        dbSet(USERS_KEY, users);
-        dbSet(SESSION_KEY, user.id);
-
-        e.target.reset();
-        closeAuth();
-        renderAuthArea();
-        toast('✅ Conta criada! Bem-vindo, ' + nick + '.');
+        btn.disabled = true; err.innerText = '';
+        try {
+          const d = await api('/api/register', { method: 'POST', body: { nick, email, password: pass } });
+          me = d.user;
+          form.reset();
+          closeAuth();
+          renderAuthArea();
+          toast('✅ Conta criada! Bem-vindo, ' + me.nick + '.');
+        } catch (ex) {
+          err.innerText = ex.message;
+        }
+        btn.disabled = false;
         return false;
       }
 
-      function doLogin(e) {
+      async function doLogin(e) {
         e.preventDefault();
-        const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+        const form = e.target;
+        const btn = form.querySelector('button[type=submit]');
+        const email = document.getElementById('loginEmail').value.trim();
         const pass = document.getElementById('loginPass').value;
         const err = document.getElementById('loginErr');
-        const user = getUsers().find(u => u.email.toLowerCase() === email);
 
-        if (!user || user.hash !== hashPass(user.salt, pass)) { err.innerText = 'Email ou senha incorretos.'; return false; }
-
-        dbSet(SESSION_KEY, user.id);
-        e.target.reset();
-        closeAuth();
-        renderAuthArea();
-        toast('👋 Olá, ' + user.nick + '!');
+        btn.disabled = true; err.innerText = '';
+        try {
+          const d = await api('/api/login', { method: 'POST', body: { email, password: pass } });
+          me = d.user;
+          form.reset();
+          closeAuth();
+          renderAuthArea();
+          toast('👋 Olá, ' + me.nick + '!');
+        } catch (ex) {
+          err.innerText = ex.message;
+        }
+        btn.disabled = false;
         return false;
       }
 
-      function logout() {
-        dbSet(SESSION_KEY, null);
+      async function logout() {
+        try { await api('/api/logout', { method: 'POST' }); } catch (e) {}
+        me = null;
         cart = []; activeDiscount = 0;
         updateCartUI();
         closeStore(); closeAdmin(); closeEdit();
@@ -1371,81 +1339,92 @@
       }
 
       /* ---------- pedidos ---------- */
-      function recordOrder(total, free) {
-        const u = currentUser();
-        if (!u) return;
-        const orders = dbGet(ORDERS_KEY, []);
-        orders.push({
-          id: newId('o'), uid: u.id, items: cart.map(i => i.name), total: total,
-          date: new Date().toISOString(),
-          status: free ? 'Concluído (admin, sem custo)' : 'Aguardando comprovante'
-        });
-        dbSet(ORDERS_KEY, orders);
+      async function recordOrder(total, free) {
+        if (!me) return;
+        const ids = cart.map(i => i.id);
+        const couponEl = document.getElementById('couponInput');
+        const coupon = couponEl ? couponEl.value.trim() : '';
         cart = []; activeDiscount = 0;
-        const ci = document.getElementById('couponInput'); if (ci) ci.value = '';
+        if (couponEl) couponEl.value = '';
         const cm = document.getElementById('couponMsg'); if (cm) cm.innerText = '';
         updateCartUI();
+        try {
+          await api('/api/orders', { method: 'POST', body: { items: ids, coupon } });
+        } catch (ex) {
+          toast('⚠️ Não foi possível registrar o pedido: ' + ex.message);
+        }
       }
 
-      function adminCheckout() {
+      async function adminCheckout() {
         if (!isAdmin()) return;
-        recordOrder(0, true);
+        await recordOrder(0, true);
         document.getElementById('cartPanel').style.display = 'none';
         toast('✅ Compra concluída como admin! Tudo liberado sem custo.');
       }
 
       /* ---------- painel admin ---------- */
-      function openAdmin() {
+      async function openAdmin() {
         if (!isAdmin()) return;
         document.getElementById('userSearch').value = '';
-        renderUsers();
         document.getElementById('adminModal').style.display = 'flex';
+        await loadUsers();
       }
       function closeAdmin() { document.getElementById('adminModal').style.display = 'none'; }
+
+      async function loadUsers() {
+        try {
+          const d = await api('/api/admin/users');
+          usersCache = d.users;
+          renderUsers();
+        } catch (ex) {
+          toast('⚠️ ' + ex.message);
+        }
+      }
 
       function renderUsers() {
         if (!isAdmin()) return;
         const q = (document.getElementById('userSearch').value || '').toLowerCase().trim();
-        const users = getUsers(), orders = dbGet(ORDERS_KEY, []);
-        const list = users.filter(u => !q || u.nick.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
-        document.getElementById('userCount').innerText = '(' + users.length + ')';
+        const list = usersCache.filter(u => !q || u.nick.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+        document.getElementById('userCount').innerText = '(' + usersCache.length + ')';
         document.getElementById('userRows').innerHTML = list.map(u => {
-          const n = orders.filter(o => o.uid === u.id).length;
           const adm = u.role === 'admin';
           return `<tr>
             <td>${esc(u.nick)}</td>
             <td class="mono">${esc(u.email)}</td>
             <td>${adm ? '<span class="role-tag admin">ADMIN</span>' : '<span class="role-tag">Membro</span>'}</td>
             <td>${new Date(u.createdAt).toLocaleString('pt-BR')}</td>
-            <td>${n}</td>
+            <td>${u.orders}</td>
             <td class="actions">
-              <button class="btn-auth" onclick="openEdit('${u.id}')">✏️ Ver / Editar</button>
-              ${adm ? '' : `<button class="btn-auth danger" onclick="deleteUser('${u.id}')">🗑️ Excluir</button>`}
+              <button class="btn-auth" onclick="openEdit('${esc(u.id)}')">✏️ Ver / Editar</button>
+              ${adm ? '' : `<button class="btn-auth danger" onclick="deleteUser('${esc(u.id)}')">🗑️ Excluir</button>`}
             </td>
           </tr>`;
         }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-dim)">Nenhum usuário encontrado.</td></tr>';
       }
 
-      function openEdit(id) {
+      async function openEdit(id) {
         if (!isAdmin()) return;
-        const u = getUsers().find(x => x.id === id);
-        if (!u) return;
-        document.getElementById('editId').value = u.id;
-        document.getElementById('editNick').value = u.nick;
-        document.getElementById('editEmail').value = u.email;
-        document.getElementById('editPass').value = '';
-        document.getElementById('editErr').innerText = '';
-        document.getElementById('editInfo').innerHTML =
-          `Tipo: <strong>${u.role === 'admin' ? 'Admin' : 'Membro'}</strong> · Cadastro: ${new Date(u.createdAt).toLocaleString('pt-BR')}`;
-        const orders = dbGet(ORDERS_KEY, []).filter(o => o.uid === u.id).reverse();
-        document.getElementById('editOrders').innerHTML = orders.length
-          ? orders.map(o => `<li>${new Date(o.date).toLocaleString('pt-BR')} — ${o.items.map(esc).join(', ')} — <strong>${formatPrice(o.total)}</strong> — ${esc(o.status)}</li>`).join('')
-          : '<li>Nenhuma compra registrada.</li>';
-        document.getElementById('editModal').style.display = 'flex';
+        try {
+          const d = await api('/api/admin/user?id=' + encodeURIComponent(id));
+          const u = d.user;
+          document.getElementById('editId').value = u.id;
+          document.getElementById('editNick').value = u.nick;
+          document.getElementById('editEmail').value = u.email;
+          document.getElementById('editPass').value = '';
+          document.getElementById('editErr').innerText = '';
+          document.getElementById('editInfo').innerHTML =
+            `Tipo: <strong>${u.role === 'admin' ? 'Admin' : 'Membro'}</strong> · Cadastro: ${new Date(u.createdAt).toLocaleString('pt-BR')}`;
+          document.getElementById('editOrders').innerHTML = d.orders.length
+            ? d.orders.map(o => `<li>${new Date(o.date).toLocaleString('pt-BR')} — ${o.items.map(esc).join(', ')} — <strong>${formatPrice(o.total)}</strong> — ${esc(o.status)}</li>`).join('')
+            : '<li>Nenhuma compra registrada.</li>';
+          document.getElementById('editModal').style.display = 'flex';
+        } catch (ex) {
+          toast('⚠️ ' + ex.message);
+        }
       }
       function closeEdit() { document.getElementById('editModal').style.display = 'none'; }
 
-      function saveEdit(e) {
+      async function saveEdit(e) {
         e.preventDefault();
         if (!isAdmin()) return false;
         const id = document.getElementById('editId').value;
@@ -1458,35 +1437,33 @@
         if (!validEmail(email)) { err.innerText = 'Digite um email válido.'; return false; }
         if (pass && pass.length < 6) { err.innerText = 'A nova senha precisa ter pelo menos 6 caracteres.'; return false; }
 
-        const users = getUsers();
-        const u = users.find(x => x.id === id);
-        if (!u) { err.innerText = 'Usuário não encontrado.'; return false; }
-        if (users.some(x => x.id !== id && x.email.toLowerCase() === email.toLowerCase())) { err.innerText = 'Esse email já está em uso por outra conta.'; return false; }
-        if (users.some(x => x.id !== id && x.nick.toLowerCase() === nick.toLowerCase())) { err.innerText = 'Esse nick já está em uso por outra conta.'; return false; }
-
-        u.nick = nick;
-        u.email = email;
-        if (pass) { u.salt = randSalt(); u.hash = hashPass(u.salt, pass); }
-        dbSet(USERS_KEY, users);
-
-        closeEdit();
-        renderUsers();
-        renderAuthArea();
-        toast('✅ Conta atualizada.');
+        try {
+          const body = { nick, email };
+          if (pass) body.password = pass;
+          const d = await api('/api/admin/user?id=' + encodeURIComponent(id), { method: 'PUT', body });
+          if (me && id === me.id) { me = d.user; renderAuthArea(); }
+          closeEdit();
+          await loadUsers();
+          toast('✅ Conta atualizada.');
+        } catch (ex) {
+          err.innerText = ex.message;
+        }
         return false;
       }
 
-      function deleteUser(id) {
+      async function deleteUser(id) {
         if (!isAdmin()) return;
-        const users = getUsers();
-        const u = users.find(x => x.id === id);
+        const u = usersCache.find(x => x.id === id);
         if (!u) return;
         if (u.role === 'admin') { alert('A conta admin não pode ser excluída.'); return; }
         if (!confirm('Excluir a conta "' + u.nick + '" (' + u.email + ')? Essa ação não pode ser desfeita.')) return;
-        dbSet(USERS_KEY, users.filter(x => x.id !== id));
-        dbSet(ORDERS_KEY, dbGet(ORDERS_KEY, []).filter(o => o.uid !== id));
-        renderUsers();
-        toast('🗑️ Conta excluída.');
+        try {
+          await api('/api/admin/user?id=' + encodeURIComponent(id), { method: 'DELETE' });
+          await loadUsers();
+          toast('🗑️ Conta excluída.');
+        } catch (ex) {
+          toast('⚠️ ' + ex.message);
+        }
       }
 
       document.addEventListener('keydown', e => {
@@ -1496,8 +1473,11 @@
         if (document.getElementById('authModal').style.display === 'flex') return closeAuth();
       });
 
-      ensureAdmin();
       renderAuthArea();
+      (async () => {
+        try { const d = await api('/api/me'); me = d.user; } catch (e) { me = null; }
+        renderAuthArea();
+      })();
     </script>
 </body>
 </html>
